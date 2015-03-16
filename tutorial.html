@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>動かしてみる</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="style.css" type="text/css" />
+  <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<div id="header">
+<h1 class="title">動かしてみる</h1>
+</div>
+<p>とにかくまずは動かして感じを掴んでみましょう。</p>
+<p>正しくインストールされていれば CoqIDE が普通のアプリケーションとして 起動できるはずです。</p>
+<div class="figure">
+<img src="img/img001.png" alt="Ubuntuの場合" /><p class="caption">Ubuntuの場合</p>
+</div>
+<div class="figure">
+<img src="img/img002.png" alt="起動したところ" /><p class="caption">起動したところ</p>
+</div>
+<p>試しに次のスクリプト</p>
+<pre><code>Require Import ssreflect.
+
+Section Tutorial.
+
+  Variable A B C : Prop.
+
+  Lemma HilbertS : (A -&gt; B -&gt; C) -&gt; (A -&gt; B) -&gt; A -&gt; C.
+  Proof.
+    move =&gt; g.
+    move =&gt; f.
+    move =&gt; x.
+    apply g.
+    apply x.
+    apply f.
+    apply x.
+  Qed.
+
+End Tutorial.</code></pre>
+<p>をコピペして、左上の下向き矢印アイコンをポチポチ押してみてください。</p>
+<div class="figure">
+<img src="img/img003.png" alt="入力したところ" /><p class="caption">入力したところ</p>
+</div>
+<div class="figure">
+<img src="img/img004.png" alt="ポチポチ" /><p class="caption">ポチポチ</p>
+</div>
+<p>緑の範囲選択が <code>Qed.</code> に到達して右下の窓に <code>HilbertS is defined</code> と表示されたら証明完了です。</p>
+<div class="figure">
+<img src="img/img005.png" alt="証明完了!" /><p class="caption">証明完了!</p>
+</div>
+<h1 id="解説">解説</h1>
+<p>まずは全体の説明をします。</p>
+<ul>
+<li><p>Coq は大文字と小文字を区別します。 日本語等の Unicode 文字も扱えるようです。</p></li>
+<li><p>改行やインデントは空白と同じ扱いです。 読みやすいように好みで整形してください。</p></li>
+<li><p><code>(*</code> と <code>*)</code> に囲まれた範囲はコメントとして無視されます。 コメントはネスト可能です。</p></li>
+<li><p>Coq の文の最初の単語は Command か tactic です。 Command (Section, Lemma, ...) は英大文字から、 tactic (move, apply, ...) は英小文字から始まります。 tactic は証明環境 (<code>Proof.</code> と <code>Qed.</code> の間) でのみ使えます。</p></li>
+<li><p>Coq の文はピリオド <code>.</code> で終わります。 つけ忘れに注意しましょう。</p></li>
+</ul>
+<p>次に先程入力したスクリプト</p>
+<pre><code>Require Import ssreflect.
+
+Section Tutorial.
+
+  Variable A B C : Prop.
+
+  Lemma HilbertS : (A -&gt; B -&gt; C) -&gt; (A -&gt; B) -&gt; A -&gt; C.
+  Proof.
+    move =&gt; g.
+    move =&gt; f.
+    move =&gt; x.
+    apply g.
+    apply x.
+    apply f.
+    apply x.
+  Qed.
+
+End Tutorial.</code></pre>
+<p>の各文を見て行きましょう。</p>
+<ul>
+<li><p><code>Require Import ssreflect.</code></p>
+<p><a href="http://ja.wikipedia.org/wiki/Coq#Ssreflect.E6.8B.A1.E5.BC.B5">Ssreflect拡張</a> を 読み込みます。 C 言語の <code>#include &lt;stdio.h&gt;</code> みたいなものだと思って 冒頭に書いておきましょう。</p></li>
+<li><p><code>Section Tutorial.</code></p>
+<p>セクションを開始します。 <code>Tutorial</code> の部分には好きな名前がつけられます。 セクション内で宣言された変数は同一セクション内からのみ参照できます。 セクションはネスト可能です。</p></li>
+<li><p><code>Variable A B C : Prop.</code></p>
+<p>変数宣言です。 「以下、この章では <code>A</code>, <code>B</code>, <code>C</code> は命題とする。」 といったところです。</p></li>
+<li><p><code>Lemma HilbertS : (A -&gt; B -&gt; C) -&gt; (A -&gt; B) -&gt; A -&gt; C.</code></p>
+<p>補題です。 <code>HilbertS</code> はこの補題につけられる名前です。 <code>-&gt;</code> はとりあえず「ならば」と読めばよく、 右結合なのであえて括弧をつければ <code>(A -&gt; (B -&gt; C)) -&gt; ((A -&gt; B) -&gt; (A -&gt; C))</code> となります。 これは <a href="https://en.wikipedia.org/wiki/Hilbert_system">Hilbert System</a> の公理の一つです。</p></li>
+<li><p><code>Proof.</code></p>
+<p>ここから <code>Qed.</code> までが証明環境です。 tactic を使って証明を操作していきます。 証明の進捗状況が右上の窓に表示されるので 上下の矢印アイコンで操作しながら見て行きましょう。</p>
+<div class="figure">
+<img src="img/img004.png" alt="証明開始" /><p class="caption">証明開始</p>
+</div>
+<pre><code>1 subgoals
+A : Prop
+B : Prop
+C : Prop
+______________________________________(1/1)
+(A -&gt; B -&gt; C) -&gt; (A -&gt; B) -&gt; A -&gt; C</code></pre>
+<p>最初の行は subgoal が１つであることを示します。 罫線の上は context と呼ばれ、証明の中で使える仮定です。 罫線の下にあるのが subgoal で、これを context から 導出できれば証明完了です。 今は補題そのものが subgoal になっています。</p></li>
+<li><p><code>move =&gt; g. move =&gt; f. move =&gt; x.</code></p>
+<p>subgoal が <code>(A -&gt; B -&gt; C) -&gt; (A -&gt; B) -&gt; A -&gt; C</code> なので、 <code>A -&gt; B -&gt; C</code> を仮定して <code>(A -&gt; B) -&gt; A -&gt; C</code> を示せばよいでしょう。 それを実現するのが <code>move</code> tactic で、 <code>move =&gt; g.</code> により subgoal の仮定 <code>A -&gt; B -&gt; C</code> を context に持ち上げ <code>g</code> と名付けます。 あとの２つも同様です。 ３文に分けて行いましたが <code>move =&gt; g f x.</code> とまとめて行うこともできます。</p>
+<p>この時点で context と subgoal は以下のようになっているはずです。</p>
+<pre><code>1 subgoals
+A : Prop
+B : Prop
+C : Prop
+g : A -&gt; B -&gt; C
+f : A -&gt; B
+x : A
+______________________________________(1/1)
+C</code></pre></li>
+<li><p><code>apply g.</code></p>
+<p>subgoal <code>C</code> を示したいわけですが context に <code>g : A -&gt; B -&gt; C</code> があるので、 <code>A</code> と <code>B</code> を示せばよいでしょう。 それを実現するのが <code>apply</code> tactic で、 <code>apply g.</code> により subgoal が <code>A</code> と <code>B</code> の２つに置き換えられます。</p></li>
+<li><p><code>apply x.</code></p>
+<p>subgoal が２つに増えましたが上から順に示せばよいです。 １つめの subgoal は <code>A</code> ですが context に <code>x : A</code> があるので、 <code>apply x.</code> とすることでこの subgoal は導出されます。 導出された subgoal は見えなくなります。</p></li>
+<li><p><code>apply f.</code></p>
+<p>残った subgoal は <code>B</code> ですが context に <code>f : A -&gt; B</code> があるので、 <code>apply f.</code> とすることで <code>A</code> に置き換わります。</p></li>
+<li><p><code>apply x.</code></p>
+<p>この <code>A</code> も <code>apply x.</code> とすれば導出されます。</p></li>
+<li><p><code>Qed.</code></p>
+<p>すべての subgoal が導出されたので <code>Qed.</code> として証明完了です。</p></li>
+<li><p><code>End Tutorial.</code></p>
+<p>セクションを閉じます。 セクション <code>Tutorial</code> の中で宣言された <code>A</code>, <code>B</code>, <code>C</code> にはアクセスできなくなります。</p></li>
+</ul>
+<h2 id="背景">背景</h2>
+<p>上でみたような命題の証明の背景にあるのは <a href="http://ja.wikipedia.org/wiki/カリー＝ハワード同型対応">カリー＝ハワード同型対応</a> と呼ばれる証明論と型システムの間の対応です。 ここでは型システムとして <a href="http://ja.wikipedia.org/wiki/型付きラムダ計算">型付きラムダ計算</a> を考えます。</p>
+<p>今後の解説に必要な範囲で簡単に説明しておきます。 文法は Coq のものと揃えておきます。</p>
+<p><code>a : A</code> と書いたら「<code>a</code> は型 <code>A</code> を持つ」と読みます。 型付きラムダ計算は２つの公理からなります。</p>
+<ul>
+<li><p>関数適用</p>
+<p><code>a : A</code> かつ <code>f : A -&gt; B</code> ならば <code>f a : B</code> が成り立つ。</p></li>
+<li><p>関数抽象</p>
+<p>仮定 <code>x : A</code> のもと <code>y : B</code> ならば、 仮定 <code>x : A</code> なしに <code>fun x : A =&gt; y : A -&gt; B</code> が成り立つ。 但し、一般に <code>y</code> は <code>x</code> に依存する。</p></li>
+</ul>
+<p>カリー＝ハワード同型対応にしたがって型付きラムダ計算と証明論を比較してみます。 参考に集合論も加えておきます。</p>
+<ul>
+<li><p>型付きラムダ計算</p>
+<table>
+<colgroup>
+<col width="29%" />
+<col width="54%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td align="center"><code>a : A</code></td>
+<td align="center"><code>a</code> は型 <code>A</code> を持つ。</td>
+</tr>
+<tr class="even">
+<td align="center"><code>A -&gt; B</code></td>
+<td align="center"><code>A</code> から <code>B</code> への関数の型。</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>f a</code></td>
+<td align="center"><code>f : A -&gt; B</code> に <code>a : A</code> を適用。 型は <code>B</code>。</td>
+</tr>
+<tr class="even">
+<td align="center"><code>fun x : A =&gt; y</code></td>
+<td align="center"><code>x : A</code> に <code>y : B</code> を対応させる関数。 型は <code>A -&gt; B</code>。</td>
+</tr>
+</tbody>
+</table></li>
+<li><p>証明論</p>
+<table>
+<colgroup>
+<col width="29%" />
+<col width="62%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td align="center"><code>a : A</code></td>
+<td align="center"><code>a</code> は命題 <code>A</code> の証明。</td>
+</tr>
+<tr class="even">
+<td align="center"><code>A -&gt; B</code></td>
+<td align="center">命題「<code>A</code> ならば <code>B</code>」。</td>
+</tr>
+<tr class="odd">
+<td align="center"><code>f a</code></td>
+<td align="center"><code>A -&gt; B</code> の証明 <code>f</code> と <code>A</code> の証明 <code>a</code> から 得られる <code>B</code> の証明。</td>
+</tr>
+<tr class="even">
+<td align="center"><code>fun x : A =&gt; y</code></td>
+<td align="center"><code>x</code> を <code>A</code> の証明と仮定して <code>B</code> の証明 <code>y</code> を与える。 これは、<code>A -&gt; B</code> の証明となる。</td>
+</tr>
+</tbody>
+</table></li>
+<li><p>集合論</p>
+<table>
+<colgroup>
+<col width="31%" />
+<col width="68%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td align="center"><span class="math">\(a \in A\)</span></td>
+<td align="center"><span class="math">\(a\)</span> は集合 <span class="math">\(A\)</span> の元。</td>
+</tr>
+<tr class="even">
+<td align="center"><span class="math">\(\mathrm{Map}(A, B)\)</span></td>
+<td align="center"><span class="math">\(A\)</span> から <span class="math">\(B\)</span> への写像の集合。</td>
+</tr>
+<tr class="odd">
+<td align="center"><span class="math">\(f(a)\)</span></td>
+<td align="center"><span class="math">\(f \in \mathrm{Map}(A, B)\)</span> に <span class="math">\(a \in A\)</span> を適用。 これは <span class="math">\(B\)</span> の元。</td>
+</tr>
+<tr class="even">
+<td align="center"><span class="math">\(A \ni x \mapsto y\)</span></td>
+<td align="center"><span class="math">\(A\)</span> の元 <span class="math">\(x\)</span> に <span class="math">\(B\)</span> の元 <span class="math">\(y\)</span> を対応させる写像。 これは <span class="math">\(\mathrm{Map}(A, B)\)</span> の元。</td>
+</tr>
+</tbody>
+</table></li>
+</ul>
+<p>このあたりを踏まえて <code>HilbertS</code> の証明を見てみましょう。</p>
+<p><code>HilbertS</code> の証明が完了している段階で Escape (もしくは Navigation から Show Query Pane) を押して、</p>
+<div class="figure">
+<img src="img/img006.png" />
+</div>
+<p>新規作成っぽいボタンを押して、 <code>Print</code> と <code>HilbertS</code> と入力して Ok を押してみてください。</p>
+<div class="figure">
+<img src="img/img007.png" />
+</div>
+<p>そこに表示されている</p>
+<pre><code>fun (g : A -&gt; B -&gt; C) (f : A -&gt; B) (x : A) =&gt; g x (f x)</code></pre>
+<p>がさっき書いた証明に対応するプログラム (ラムダ項) です。 これは</p>
+<pre><code>fun g : A -&gt; B -&gt; C =&gt; fun f : A -&gt; B =&gt; fun x : A =&gt; g x (f x)</code></pre>
+<p>の略記です。 関数適用は左結合なので <code>g x (f x)</code> は括弧をつけると <code>(g x) (f x)</code> となります。</p>
+<p>型付きラムダ計算の公理から、 上の式の型を確認してみましょう。</p>
+<ol style="list-style-type: decimal">
+<li><p><code>g : A -&gt; B -&gt; C</code>, <code>f : A -&gt; B</code>, <code>x : A</code> を仮定します。</p></li>
+<li><p>関数適用により <code>f x : B</code> が得られます。</p></li>
+<li><p>関数適用により <code>g x : B -&gt; C</code> が得られます。</p></li>
+<li><p>関数適用により <code>g x (f x) : C</code> が得られます。</p></li>
+<li><p>関数抽象により仮定 <code>x : A</code> を外して <code>fun x : A =&gt; g x (f x) : A -&gt; C</code> が得られます。</p></li>
+<li><p>関数抽象により仮定 <code>f : A -&gt; B</code> を外して <code>fun f : A -&gt; B =&gt; fun x : A =&gt; g x (f x) : (A -&gt; B) -&gt; A -&gt; C</code> が得られます。</p></li>
+<li><p>関数抽象により仮定 <code>g : A -&gt; B -&gt; C</code> を外して <code>fun g : A -&gt; B -&gt; C =&gt; fun f : A -&gt; B =&gt; fun x : A =&gt; g x (f x) : (A -&gt; B -&gt; C) -&gt; (A -&gt; B) -&gt; A -&gt; C</code> が得られます</p></li>
+</ol>
+<p>以上の議論から</p>
+<pre><code>fun (g : A -&gt; B -&gt; C) (f : A -&gt; B) (x : A) =&gt; g x (f x)</code></pre>
+<p>は型</p>
+<pre><code>(A -&gt; B -&gt; C) -&gt; (A -&gt; B) -&gt; A -&gt; C</code></pre>
+<p>を持つことが分かりました。 カリー＝ハワード同型対応より、 命題 <code>(A -&gt; B -&gt; C) -&gt; (A -&gt; B) -&gt; A -&gt; C</code> の証明が得られました。</p>
+<p>Coq で書いた証明は今行った議論を逆にたどりながら構成しているのがわかるでしょうか。</p>
+<hr />
+<p><a href="index.html">Top</a> <a href="editor.html">Next</a></p>
+</body>
+</html>

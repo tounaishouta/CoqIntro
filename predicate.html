@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>述語論理</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="style.css" type="text/css" />
+  <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<div id="header">
+<h1 class="title">述語論理</h1>
+</div>
+<p>このページでは述語論理の証明について見て行きましょう。</p>
+<p><a href="src/predicate.v">説明に用いるスクリプトや演習の解答例</a></p>
+<h2 id="全称量化子-forall">全称量化子 <code>forall</code></h2>
+<p><a href="tutorial.html">動かしてみる</a> のページで型付きラムダ計算の公理２つ</p>
+<ul>
+<li><p>関数適用</p>
+<p><code>a : A</code> かつ <code>f : A -&gt; B</code> ならば <code>f a : B</code> が成り立つ。</p></li>
+<li><p>関数抽象</p>
+<p>仮定 <code>x : A</code> のもと <code>y : B</code> ならば、 仮定 <code>x : A</code> なしに <code>fun x : A =&gt; y : A -&gt; B</code> が成り立つ。 但し、一般に <code>y</code> は <code>x</code> に依存する。</p></li>
+</ul>
+<p>を紹介しましたが、実は不十分で次のように拡張されます。</p>
+<ul>
+<li><p>関数適用</p>
+<p><code>a : A</code> かつ <code>f : forall x : A, P x</code> ならば <code>f a : P a</code> が成り立つ。</p></li>
+<li><p>関数抽象</p>
+<p>仮定 <code>x : A</code> のもと <code>y : P x</code> ならば、 仮定 <code>x : A</code> なしに <code>fun x : A =&gt; y : forall x : A, P x</code> が成り立つ。 但し、一般に <code>y</code> は <code>x</code> に依存する。</p></li>
+</ul>
+<p>これは関数の出力の型が関数の入力に依存する場合を考えていて集合論の直積に対応します。 比較してみましょう。</p>
+<ul>
+<li><p><span class="math">\(a \in A\)</span> かつ <span class="math">\((y _ x) _ {x \in A} \in \prod _ {x \in A} P _ x\)</span> ならば <span class="math">\(y _ a \in P _ a\)</span> が成り立つ。</p></li>
+<li><p><span class="math">\(x \in A\)</span> に対し <span class="math">\(y _ x \in P _ x\)</span> ならば <span class="math">\((y _ x) _ {x \in A} \in \prod _ {x \in A} P _ x\)</span> が成り立つ。</p></li>
+</ul>
+<p>基本の関数型 <code>A -&gt; B</code> は出力の型が入力に依存しない特別な場合とみなすことができます。 実際、</p>
+<pre><code>Require Import ssreflect.
+
+Section Predicate.
+
+  Section Quantifier.
+
+    Variable A : Type.
+    Variable B : Prop.
+    Variable P Q : A -&gt; Prop.
+
+    Check forall x : A, P x.
+    Check forall x : A, B.
+    Check A -&gt; B.</code></pre>
+<p>を実行してみると、 <code>A -&gt; B</code> と <code>forall x : A, B</code> は同様に扱われているのが分かります。</p>
+<p>証明においても <code>move</code> を同様に用いることができます。 <code>apply</code> に関しては埋めるべき入力の穴を出力の型から推論して 自動で埋めてくれることがあります。 例を見てみましょう。</p>
+<pre><code>Lemma HilbertS&#39; : (forall x : A, P x -&gt; Q x) -&gt; (forall x : A, P x) -&gt; forall x : A, Q x.
+Proof.
+  move =&gt; g f x.
+  apply g.
+  apply f.
+Qed.
+
+Print HilbertS&#39;.</code></pre>
+<p><code>Print</code> した結果</p>
+<pre><code>HilbertS&#39; =
+fun (g : forall x : A, P x -&gt; Q x) (f : forall x : A, P x) (x : A) =&gt;
+g x (f x)
+     : (forall x : A, P x -&gt; Q x) -&gt; (forall x : A, P x) -&gt; forall x : A, Q x</code></pre>
+<p>をみると、 式は <a href="tutorial.html">動かしてみる</a> で示した <code>HilbertS</code> に類似していることがわかります。 証明が短く済んでいるのは、subgoal の形から推論して <code>apply x.</code> を補ってくれているからです。</p>
+<p>推論できない場合は <code>with</code> で補う必要があります。</p>
+<pre><code>Lemma HilbertS&#39;&#39; : (forall x : A, P x -&gt; B) -&gt; (forall x : A, P x) -&gt; A -&gt; B.
+Proof.
+  move =&gt; g f x.
+  (* apply g. ===&gt; Error *)
+  apply g with x.
+  apply f.
+Qed.
+
+Print HilbertS&#39;&#39;.</code></pre>
+<p><code>apply g.</code> をする際、subgoal <code>B</code> からでは、<code>x</code> を補うことができないので <code>with x</code> を付け加える必要があります。 <code>Print</code> の結果を見ると <code>HilbertS''</code> も型を除いて <code>HilbertS</code> や <code>HilbertS'</code> と 同じ式であることがわかります。</p>
+<h2 id="存在量化子-exists">存在量化子 <code>exists</code></h2>
+<p>存在量化子は先ほど見た <code>forall</code> を用いて定義されています。 実際に見てみましょう。</p>
+<pre><code>Locate &quot;exists&quot;.
+Check ex P.
+Check ex.
+Print ex.
+Check ex_intro.
+Check ex_ind.</code></pre>
+<p>実行結果から</p>
+<ul>
+<li><p><code>exists x : A, P x</code> は <code>ex P</code> の書き換え</p></li>
+<li><p><code>ex</code> の型は <code>forall A : Type, (A -&gt; Prop) -&gt; Prop</code></p></li>
+<li><p><code>exists x : A, P x</code> は <code>ex_intro</code> で生成されている。</p></li>
+<li><p><code>ex_intro</code> の型は <code>forall (A : Type) (P : A -&gt; Prop) (x : A), P x -&gt; exists x, P x</code></p></li>
+<li><p><code>ex_ind</code> の型は <code>forall (A : Type) (P : A -&gt; Prop) (P0 : Prop), (forall x : A, P x -&gt; P0) -&gt; (exists x, P x) -&gt; P0</code></p></li>
+</ul>
+<p>であることが分かります。<code>ex_intro</code> と <code>ex_ind</code> の型が示す通り、 <code>exists x : A, P x</code> は集合論における直和 <span class="math">\(\coprod _ {x \in A} P(x)\)</span> に対応します。</p>
+<p><code>ex : forall A : Type, (A -&gt; Prop) -&gt; Prop</code> と <code>ex P : Prop</code> は整合性がとれていないように見えますが、 <code>Print ex.</code> の結果</p>
+<pre><code>Inductive ex (A : Type) (P : A -&gt; Prop) : Prop :=
+    ex_intro : forall x : A, P x -&gt; exists x, P x
+
+For ex: Argument A is implicit
+For ex_intro: Argument A is implicit
+For ex: Argument scopes are [type_scope _]
+For ex_intro: Argument scopes are [type_scope _ _ _]</code></pre>
+<p>の <code>For ex: Argument A is implicit</code> という記述から引数 <code>A</code> は明記する必要がないことが分かります。 (逆に明示的に <code>ex A P</code> などとするとエラーとなる。) 命題論理のページでちょくちょく出てきた <code>forall</code> などを都合よく無視できたのも同様の理由です。</p>
+<p>具体例を見てみましょう。</p>
+<pre><code>Lemma forall_exists : (forall x : A, P x -&gt; Q x) -&gt; (exists x : A, P x) -&gt; (exists y : A, Q y).
+Proof.
+  move =&gt; g.
+  case.
+  move =&gt; x px.
+  apply ex_intro with x. (* exists x. *)
+  apply g.
+  apply px.
+Qed.</code></pre>
+<p><code>case.</code> (この場合は <code>apply ex_ind.</code> としてもよい。) によって、 subgoal が <code>(exists x : A, P x) -&gt; exists y : A, Q y</code> から <code>forall x : A, P x -&gt; exists y : A, Q y</code> に置き換わります。</p>
+<p>Tips: <code>exists y : A, Q y</code> の形の subgoal を <code>apply ex_intro with x.</code> によって、 <code>Q x</code> に置き換えられました。 これは <code>exists x.</code> に書き換えられます。</p>
+<hr />
+<p><a href="propositional.html">Back</a> <a href="index.html">Top</a></p>
+</body>
+</html>

@@ -1,0 +1,28 @@
+body {
+  font-family: sans-serif;
+  font-size: 18px;
+
+  padding-left: 5%;
+  padding-right: 5%;
+}
+
+code {
+  font-family: monospace;
+  font-size: 18px;
+}
+
+p.caption {
+  font-size: 12px;
+}
+
+pre, code {
+  background-color: #ffffcc;
+}
+
+table, td {
+  border: solid 1px #aaaaaa;
+}
+
+td {
+  padding: 5px;
+}

@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>命題論理</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="style.css" type="text/css" />
+  <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<div id="header">
+<h1 class="title">命題論理</h1>
+</div>
+<p>このページでは命題論理の証明について見て行きましょう。</p>
+<p><a href="src/propositional.v">説明に用いるスクリプトや演習の解答例</a></p>
+<p><a href="tutorial.html">動かしてみる</a> のページで論理包含 <code>-&gt;</code> について詳しく見ました。 実は他の論理演算についても、この <code>-&gt;</code> を用いて定義されています。</p>
+<h2 id="論理和">論理和 <code>\/</code></h2>
+<p>最初に論理和についてです。 <code>\/</code> により <span class="math">\(\lor\)</span> を表現しているのですが、 環境によってはバックスラッシュ＼が円記号￥として 表示されてしまうようです。 次のコマンドを実行して 論理和の定義を見て行きましょう。</p>
+<pre><code>Require Import ssreflect.
+
+Section Propositional.
+
+  Variable A B C : Prop.
+
+  Section Disjunction.
+
+    Locate &quot;\/&quot;.</code></pre>
+<p>新しく始めていますが、<code>End Tutorial.</code> の続きから始めても構いません。 CoqIDE の場合 <code>Locate</code>, <code>Check</code>, <code>Print</code> はスクリプトの中で直接実行すると 警告が出るのですが、説明の都合上警告は無視してこのスタイルで進めることにします。 気になる人は前々回用いた Query Pane を使ってください。</p>
+<p>実行結果</p>
+<pre><code>Notation            Scope
+&quot;A \/ B&quot; := or A B   : type_scope
+                      (default interpretation)</code></pre>
+<p>から <code>A \/ B</code> というのは <code>or A B</code> の書き換えであるとわかります。</p>
+<p>続けて</p>
+<pre><code>Check or.</code></pre>
+<p>を実行すると、<code>or</code> の型が <code>Prop -&gt; Prop -&gt; Prop</code> であることが分かります。 すなわち、<code>or</code> は命題２つを引数にとり命題を返す関数です。</p>
+<p><code>or</code> の定義は</p>
+<pre><code>Print or.</code></pre>
+<p>で確認できます。 色々書いてありますが大事なのは最初の部分</p>
+<pre><code>Inductive or (A B : Prop) : Prop :=
+    or_introl : A -&gt; A \/ B | or_intror : B -&gt; A \/ B</code></pre>
+<p>で、意味するところは、<code>or A B</code> (<code>A \/ B</code>) というのは <code>or_introl : A -&gt; A \/ B</code> と <code>or_intror : B -&gt; A \/ B</code> で「自由に生成された」命題だということです。 この <code>or_introl</code> や <code>or_intror</code> は <code>or A B</code> (<code>A \/ B</code>) の constructor と呼ばれます。</p>
+<p><code>Inductive</code> Command で定義された型には、<code>名前_ind</code> という関数が付随します。 <code>or_introl</code>, <code>or_intror</code>, <code>or_ind</code> の型を <code>Check</code> Command で見てみると、</p>
+<pre><code>or_introl : forall A B : Prop, A -&gt; A \/ B
+or_intror : forall A B : Prop, B -&gt; A \/ B
+or_ind    : forall A B P : Prop, (A -&gt; P) -&gt; (B -&gt; P) -&gt; (A \/ B -&gt; P)</code></pre>
+<p>となっていることが分かります。 (<code>Check</code> Command は型を確認する Command です。) <code>forall ... ,</code> の部分を適度に無視して、集合論の言葉で言い換えて説明すると、</p>
+<ul>
+<li><code>A</code> から <code>A \/ B</code> に写像がある。</li>
+<li><code>B</code> から <code>A \/ B</code> に写像がある。</li>
+<li>任意の <code>P</code> に対して、「<code>A</code> から <code>P</code> への写像」と「<code>B</code> から <code>P</code> への写像」から 「<code>A \/ B</code> から <code>P</code> への写像」が得られる。</li>
+</ul>
+<p>というようなことを言っているわけです。 これはまさに集合の disjoint union の普遍性ですよね。 実際、論理和 <code>A \/ B</code> は型システムの直和型 <code>A + B</code> に対応します。 先ほど述べた「自由に生成された」の意味を感じていただけでしょうか。 <code>forall ... ,</code> については <a href="predicate.html">述語論理</a> のページで解説したいと思います。</p>
+<p>この普遍性を用いて論理和の結合性をを証明してみます。</p>
+<pre><code>Lemma or_trans : (A \/ B) \/ C -&gt; A \/ (B \/ C).
+Proof.
+  apply or_ind. (* case. *)
+  apply or_ind. (* case. *)
+  move =&gt; a.
+  apply or_introl. (* left. *)
+  apply a.
+  move =&gt; b.
+  apply or_intror. (* right. *)
+  apply or_introl. (* left. *)
+  apply b.
+  move =&gt; c.
+  apply or_intror. (* right. *)
+  apply or_intror. (* right. *)
+  apply c.
+Qed.</code></pre>
+<p><code>\/</code> は右結合なので、<code>A \/ B \/ C</code> と表示されていたら、<code>A \/ (B \/ C)</code> の意味です。</p>
+<p>Tips: <code>A \/ B -&gt; P</code> の形の subgoal を <code>apply or_ind.</code> によって、 <code>A -&gt; P</code> と <code>B -&gt; P</code> の２つの subgoal に分割できました。 この場合分けを賢く行ってくれるのが <code>case</code> tactic です。 上の証明の <code>apply or_ind.</code> は２つとも <code>case.</code> に書き換えられます。 <code>case</code> は <code>\/</code> 以外の場合にも使える便利な tactic です。</p>
+<p>Tips: <code>A \/ B</code> の形の subgoal を <code>apply or_introl.</code> や <code>apply or_intror.</code> によって、 <code>A</code> や <code>B</code> に置き換えられました。 これらはそれぞれ <code>left.</code> や <code>right.</code> に書き換えられます。</p>
+<h3 id="演習">演習</h3>
+<p>同様に</p>
+<pre><code>Lemma or_trans&#39; : A \/ (B \/ C) -&gt; (A \/ B) \/ C.
+
+Lemma or_comm : A \/ B -&gt; B \/ A.
+
+Lemma or_iden : A \/ A -&gt; A.</code></pre>
+<p>を示してみましょう。</p>
+<h2 id="論理積">論理積 <code>/\</code></h2>
+<p>前回と同様に論理積についてみ見てみましょう。</p>
+<pre><code>Section Conjunction.
+
+  Locate &quot;/\&quot;.
+
+  Check and.
+
+  Print and.
+
+  Check conj.
+  Check and_ind.</code></pre>
+<p>すると、</p>
+<ul>
+<li><p><code>A /\ B</code> は <code>and A B</code> の書き換え</p></li>
+<li><p><code>and</code> の型は <code>Prop -&gt; Prop -&gt; Prop</code></p></li>
+<li><p><code>and A B</code> (<code>A /\ B</code>) は <code>conj : A -&gt; B -&gt; A /\ B</code> で 「自由に生成された」型</p></li>
+<li><p><code>conj</code> の型は <code>forall A B : Prop, A -&gt; B -&gt; A /\ B</code></p></li>
+<li><p><code>and_ind</code> の型は <code>forall A B P : Prop, (A -&gt; B -&gt; P) -&gt; A /\ B -&gt; P</code></p></li>
+</ul>
+<p>であることが分かります。これを直積の普遍性というのは少し苦しい感じもしますが、 (closed monoidal category の言葉で説明できるかもしれませんが・・・) 型システムにおける直積型 <code>A * B</code> に対応しています。</p>
+<p>基本的な命題を示してみましょう。 <code>/\</code> が subgoal の仮定にあるときも同様に <code>case</code> tactic が使えます。</p>
+<pre><code>Lemma and_eliml : A /\ B -&gt; A.
+Proof.
+  case.
+  move =&gt; a b.
+  apply a.
+Qed.
+
+Lemma and_comm : A /\ B -&gt; B /\ A.
+Proof.
+  case.
+  move =&gt; a b.
+  apply conj. (* split. *)
+  apply b.
+  apply a.
+Qed.</code></pre>
+<p>Tips: <code>A /\ B</code> の形の subgoal を <code>apply conj.</code> によって、 <code>A</code> と <code>B</code> の2つの subgoal に分割できました。 これは <code>split.</code> に書き換えられます。 <code>split</code> は <code>/\</code> 以外の場合も constructor がひとつならば使える 便利な tactic です。</p>
+<h3 id="演習-1">演習</h3>
+<p>同様に</p>
+<pre><code>Lemma and_elimr : A /\ B -&gt; B.
+
+Lemma and_trans : (A /\ B) /\ C -&gt; A /\ (B /\ C).
+
+Lemma and_trans&#39; : A /\ (B /\ C) -&gt; (A /\ B) /\ C.
+
+Lemma and_iden : A -&gt; A /\ A.</code></pre>
+<p>を示しましょう。</p>
+<h2 id="論理否定">論理否定 <code>~</code></h2>
+<p>次に論理否定についてみ見てみましょう。</p>
+<pre><code>Section Negation.
+
+  Locate &quot;~&quot;.
+  Check not.
+  Print not.
+
+  Check False.
+  Print False.
+  Check False_ind.</code></pre>
+<p>実行結果を順に見ていくと、</p>
+<ul>
+<li><code>~ x</code> は <code>not x</code> の書き換え</li>
+<li><code>not</code> の型は <code>Prop -&gt; Prop</code></li>
+<li><code>not</code> は <code>A : Prop</code> に <code>A -&gt; False</code> を対応させる関数</li>
+</ul>
+<p>であることが分かります。 <code>False</code> が何か調べてみると、少し面白いことになっていて <code>False</code> は何もないところから「自由に生成された」命題であることが分かります。 <code>False</code> は「偽」を表す命題で、 型システムにおけるボトム型、集合論における空集合に対応します。 <code>False_ind</code> の型から <code>False -&gt; P</code> の形の subgoal は <code>apply False_ind.</code> または単に <code>case.</code> とすることで即座に導出できることが分かります。 それ以外の形の subgoal は <code>apply False_ind.</code> とすることで、 <code>False</code> に置き換えられます。 矛盾が導けるならばなんでも導出できるということです。</p>
+<p><a href="http://ja.wikipedia.org/wiki/選言三段論法">選言三段論法</a> を示してみましょう。</p>
+<pre><code>Lemma disj_syll : A \/ B -&gt; ~ A -&gt; B.
+Proof.
+  unfold &quot;~&quot;.
+  case.
+  move =&gt; a not_a.
+  apply False_ind. (* exfalso. *)
+  apply not_a.
+  apply a.
+  move =&gt; b not_a.
+  apply b.
+Qed.</code></pre>
+<p>新しく <code>unfold</code> tactic が出てきたので説明しておきます。 上で見たように <code>~ A</code> は <code>not A</code> のことで、 <code>not</code> は <code>A</code> に <code>A -&gt; False</code> を対応させる関数だったので、 <code>~ A</code> は <code>A -&gt; False</code> と同値です。 <code>unfold &quot;~&quot;.</code> とすることでこの書き換えを行ってくれます。</p>
+<p>Tips: <code>apply False_ind.</code> によって、 subgoal を <code>False</code> に置き換えられました。 これは <code>exfalso.</code> に書き換えられます。 ラテン語の <a href="http://en.wikipedia.org/wiki/Principle_of_explosion">ex falso quodlibet</a> に由来しています。</p>
+<p>次に二重否定の導入を示してみましょう。</p>
+<pre><code>Lemma double_neg_intro : A -&gt; ~ ~ A.
+Proof.
+  unfold &quot;~&quot;.
+  move =&gt; a not_a.
+  apply not_a.
+  apply a.
+Qed.</code></pre>
+<p>今まで証明論と型システムの関係を見てきましたが ここで扱っている論理は <a href="http://ja.wikipedia.org/wiki/直観論理">直観論理</a> と呼ばれるもので、 二重否定の除去、あるいは排中律を認めない立場をとっています。 それでは困る気もしますが、次を書けば万事解決します。</p>
+<pre><code>Hypothesis double_neg_elim : forall P : Prop, ~ ~ P -&gt; P.</code></pre>
+<p><code>Hypothesis</code> とありますが、実は <code>Variable</code> と同じことで、 <code>double_neg_elim</code> を型 <code>forall P : Prop, ~ ~ P -&gt; P</code> を持つ変数として 定義しているだけです。 この仮定のもとで排中律を示してみましょう。</p>
+<pre><code>Lemma excluded_middle : A \/ ~ A.
+Proof.
+  apply double_neg_elim.
+  unfold &quot;~&quot;.
+  move =&gt; H.
+  apply H.
+  right.
+  move =&gt; a.
+  apply H.
+  left.
+  apply a.
+Qed.</code></pre>
+<h3 id="演習-2">演習</h3>
+<p>できるだけ <code>double_neg_elim</code> を用いずに</p>
+<pre><code>Lemma triple_neg : ~ ~ ~ A -&gt; ~ A.
+
+Lemma de_morgan_1 : ~ (A \/ B) -&gt; (~ A /\ ~ B).
+
+Lemma de_morgan_1&#39; : (~ A /\ ~ B) -&gt; ~ (A \/ B).
+
+Lemma de_morgan_2 : ~ (A /\ B) -&gt; (~ A \/ ~ B).
+
+Lemma de_morgan_2&#39; : (~ A \/ ~ B) -&gt; ~ (A /\ B).
+
+Lemma de_morgan_3 : (A -&gt; B) -&gt; (~ B -&gt; ~ A).
+
+Lemma de_morgan_3&#39; : (~ B -&gt; ~ A) -&gt; (A -&gt; B).</code></pre>
+<p>を示してみましょう。</p>
+<hr />
+<p><a href="editor.html">Back</a> <a href="index.html">Top</a> <a href="predicate.html">Next</a></p>
+</body>
+</html>
